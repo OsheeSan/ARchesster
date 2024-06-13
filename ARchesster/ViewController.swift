@@ -15,12 +15,14 @@ let USE_DEPTH = false
 let TIME_OUT = 100
 
 class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
-
+    
     var sceneView: ARSCNView!
     
     let viewBackgroundColor: UIColor = UIColor.black
     
     var configuration: ARWorldTrackingConfiguration?
+    
+    var gestureRecognizer = GestureRecognizer.shared
     
     // Hand Detection
     var currentBuffer: CVPixelBuffer?
@@ -96,11 +98,14 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
                 
                 if obs1.chirality == .left {
                     templefthandobs = obs1
-                    if self.isOKGesture(handObservation: templefthandobs) {
-                        print("ok")
-                    } else {
-                        print("Not Ok")
+                    if !self.gestureRecognizer.isHolding {
+                        if self.isOKGesture(handObservation: templefthandobs) {
+                            self.gestureRecognizer.grab(on: self.gesturePoint(handObservation: templefthandobs))
+                        } else {
+                            self.gestureRecognizer.ungrab(on: self.gesturePoint(handObservation: templefthandobs))
+                        }
                     }
+                    
                 }
                 
                 if self.handPoseRequest.results?.count == 1 {
@@ -114,24 +119,44 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
     }
     
+    func gesturePoint(handObservation: VNHumanHandPoseObservation?) -> CGPoint? {
+        guard let handObservation = handObservation else {
+            print("Error gesture")
+            return nil
+        }
+        
+        do {
+            let thumbTip = try handObservation.recognizedPoint(.thumbTip)
+            let indexTip = try handObservation.recognizedPoint(.indexTip)
+            
+            let midX = (thumbTip.x + indexTip.x) / 2
+            let midY = (thumbTip.y + indexTip.y) / 2
+            
+            return CGPoint(x: midX, y: midY)
+        } catch {
+            print("Error pos")
+            return nil
+        }
+    }
+    
     func isOKGesture(handObservation: VNHumanHandPoseObservation?) -> Bool {
         guard let handObservation = handObservation else {
             print("Error hand")
             return false
         }
+        
+        do {
+            let thumbTip = try handObservation.recognizedPoint(.thumbTip)
+            let indexTip = try handObservation.recognizedPoint(.indexTip)
             
-            do {
-                let thumbTip = try handObservation.recognizedPoint(.thumbTip)
-                let indexTip = try handObservation.recognizedPoint(.indexTip)
-                
-                let distance = hypot(thumbTip.location.x - indexTip.location.x, thumbTip.location.y - indexTip.location.y)
-                
-                return distance < 0.1
-            } catch {
-                print("Error pos")
-                return false
-            }
+            let distance = hypot(thumbTip.location.x - indexTip.location.x, thumbTip.location.y - indexTip.location.y)
+            
+            return distance < 0.1
+        } catch {
+            print("Error pos")
+            return false
         }
+    }
     
     func processPoints(newhandobs: VNHumanHandPoseObservation?, handnode: inout HandNode?, timeout: inout Int, color: UIColor) {
         if newhandobs != nil {
