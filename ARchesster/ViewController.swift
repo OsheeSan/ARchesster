@@ -36,7 +36,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        sceneView  = ARSCNView(frame: view.frame)
+        sceneView = ARSCNView(frame: view.frame)
         view.addSubview(sceneView)
         sceneView.delegate = self
         sceneView.session.delegate = self
@@ -64,6 +64,7 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
         
         handPoseRequest.maximumHandCount = 1
         
+        sceneView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(onTap(_:))))
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -221,6 +222,55 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
             if anchorSessionID.uuidString == identifier {
                 sceneView.session.remove(anchor: anchor)
             }
+        }
+    }
+    
+    @objc
+    func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
+        let pos = gestureRecognizer.location(in: sceneView)
+        
+        guard let res = sceneView.hitTest(pos, types: .existingPlaneUsingExtent).first else {
+            print("no res tap")
+            return
+        }
+        
+        let scene = SCNScene(named: "Assets.scnassets/rook-dark.scn")
+        
+        guard let node = scene?.rootNode.childNodes.first else {
+            print("can't get node")
+            return
+        }
+        
+        let vec = SCNVector3(res.worldTransform.columns.3[0], res.worldTransform.columns.3[1], res.worldTransform.columns.3[2])
+        node.position = vec
+        //node.setWorldTransform(SCNMatrix4(res.worldTransform)) // but why does this not work....
+        sceneView.scene.rootNode.addChildNode(node)
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
+        guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
+        
+        let plane = Plane(anchor: planeAnchor, in: sceneView)
+        
+        node.addChildNode(plane)
+    }
+    
+    func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
+        // Update only anchors and nodes set up by `renderer(_:didAdd:for:)`.
+        guard let planeAnchor = anchor as? ARPlaneAnchor,
+            let plane = node.childNodes.first as? Plane
+            else { return }
+        
+        // Update ARSCNPlaneGeometry to the anchor's new estimated shape.
+        if let planeGeometry = plane.meshNode.geometry as? ARSCNPlaneGeometry {
+            planeGeometry.update(from: planeAnchor.geometry)
+        }
+
+        // Update extent visualization to the anchor's new bounding rectangle.
+        if let extentGeometry = plane.extentNode.geometry as? SCNPlane {
+            extentGeometry.width = CGFloat(planeAnchor.extent.x)
+            extentGeometry.height = CGFloat(planeAnchor.extent.z)
+            plane.extentNode.simdPosition = planeAnchor.center
         }
     }
 }
