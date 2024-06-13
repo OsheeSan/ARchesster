@@ -98,10 +98,15 @@ class ViewController: UIViewController, ARSCNViewDelegate, ARSessionDelegate {
                 
                 if obs1.chirality == .left {
                     templefthandobs = obs1
-                    if !self.gestureRecognizer.isHolding {
-                        if self.isOKGesture(handObservation: templefthandobs) {
+                    
+                    if self.isOKGesture(handObservation: templefthandobs) {
+                        if !self.gestureRecognizer.isHolding {
                             self.gestureRecognizer.grab(on: self.gesturePoint(handObservation: templefthandobs))
                         } else {
+                            self.gestureRecognizer.move(on: self.gesturePoint(handObservation: templefthandobs))
+                        }
+                    } else {
+                        if self.gestureRecognizer.isHolding {
                             self.gestureRecognizer.ungrab(on: self.gesturePoint(handObservation: templefthandobs))
                         }
                     }

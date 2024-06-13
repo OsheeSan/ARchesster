@@ -9,30 +9,40 @@ import Foundation
 
 protocol GestureWatcher {
     func gestureSwitched(to: Bool)
+    func startPosition(on point: CGPoint?)
+    func updatePosition(on point: CGPoint?)
+    func finishPosition(on point: CGPoint?)
 }
 
 class GestureRecognizer {
     
     static let shared = GestureRecognizer()
     
-    var isHolding = false
+    var isHolding = false {
+        didSet {
+            watcher?.gestureSwitched(to: isHolding)
+        }
+    }
     
-    var gestureGrabPoint: CGPoint?
-    
-    var gestureUngrabPoint: CGPoint?
+    var gesturePoint: CGPoint?
     
     var watcher: GestureWatcher?
     
     func grab(on point: CGPoint?) {
         isHolding = true
-        gestureGrabPoint = point
-        watcher?.gestureSwitched(to: true)
+        gesturePoint = point
+        watcher?.startPosition(on: point)
+    }
+    
+    func move(on point: CGPoint?) {
+        gesturePoint = point
+        watcher?.updatePosition(on: point)
     }
     
     func ungrab(on point: CGPoint?) {
         isHolding = false
-        gestureUngrabPoint = point
-        watcher?.gestureSwitched(to: false)
+        gesturePoint = point
+        watcher?.finishPosition(on: point)
     }
     
 }
