@@ -12,6 +12,10 @@ extension CGPoint {
         CGPoint(x: left.x - right.x, y: left.y - right.y)
     }
     
+    static func /(_ left: CGPoint, _ right: Int) -> CGPoint {
+        left / Float(right)
+    }
+    
     static func /(_ left: CGPoint, _ right: Float) -> CGPoint {
         CGPoint(x: left.x / CGFloat(right), y: left.y / CGFloat(right))
     }

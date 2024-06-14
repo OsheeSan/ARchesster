@@ -85,7 +85,7 @@ class GameEngine: NSObject {
         case .began:
             prevLocation = location
         case .changed:
-            let delta = (prevLocation - location) / 200
+            let delta = (prevLocation - location) / 200.0
             movableNode?.position.x += Float(delta.x)
             movableNode?.position.z += Float(delta.y)
         case .ended, .cancelled, .failed:
