@@ -10,6 +10,7 @@
 		6E4103802C1B5359005BD3EB /* Assets.scnassets in Resources */ = {isa = PBXBuildFile; fileRef = 6E41037F2C1B5358005BD3EB /* Assets.scnassets */; };
 		6E41039A2C1B7AC2005BD3EB /* Plane.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E4103992C1B7AC2005BD3EB /* Plane.swift */; };
 		6E41039C2C1C330E005BD3EB /* GameEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E41039B2C1C330E005BD3EB /* GameEngine.swift */; };
+		6E41039F2C1CE1B9005BD3EB /* CGPointExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E41039E2C1CE1B9005BD3EB /* CGPointExtension.swift */; };
 		84A1FEB12C1B128C0018837C /* GestureRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A1FEB02C1B128C0018837C /* GestureRecognizer.swift */; };
 		84F37F2A2C11CABD00D67049 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F37F292C11CABD00D67049 /* AppDelegate.swift */; };
 		84F37F2C2C11CABD00D67049 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84F37F2B2C11CABD00D67049 /* SceneDelegate.swift */; };
@@ -24,6 +25,7 @@
 		6E41037F2C1B5358005BD3EB /* Assets.scnassets */ = {isa = PBXFileReference; lastKnownFileType = wrapper.scnassets; path = Assets.scnassets; sourceTree = "<group>"; };
 		6E4103992C1B7AC2005BD3EB /* Plane.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Plane.swift; sourceTree = "<group>"; };
 		6E41039B2C1C330E005BD3EB /* GameEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameEngine.swift; sourceTree = "<group>"; };
+		6E41039E2C1CE1B9005BD3EB /* CGPointExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGPointExtension.swift; sourceTree = "<group>"; };
 		84A1FEB02C1B128C0018837C /* GestureRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GestureRecognizer.swift; sourceTree = "<group>"; };
 		84F37F262C11CABD00D67049 /* ARchesster.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ARchesster.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		84F37F292C11CABD00D67049 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -78,6 +80,7 @@
 				84A1FEB02C1B128C0018837C /* GestureRecognizer.swift */,
 				6E41037F2C1B5358005BD3EB /* Assets.scnassets */,
 				6E41039B2C1C330E005BD3EB /* GameEngine.swift */,
+				6E41039E2C1CE1B9005BD3EB /* CGPointExtension.swift */,
 			);
 			path = ARchesster;
 			sourceTree = "<group>";
@@ -156,6 +159,7 @@
 			files = (
 				84F37F2E2C11CABD00D67049 /* ViewController.swift in Sources */,
 				84A1FEB12C1B128C0018837C /* GestureRecognizer.swift in Sources */,
+				6E41039F2C1CE1B9005BD3EB /* CGPointExtension.swift in Sources */,
 				6E41039C2C1C330E005BD3EB /* GameEngine.swift in Sources */,
 				84F37F2A2C11CABD00D67049 /* AppDelegate.swift in Sources */,
 				84F37F3E2C11CAFF00D67049 /* HandNode.swift in Sources */,

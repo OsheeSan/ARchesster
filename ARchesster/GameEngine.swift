@@ -26,6 +26,7 @@ class GameEngine: NSObject {
     private var sceneView: ARSCNView! // don't kill me I don't want to write guard let in every func
     
     private var movableNode: SCNNode?
+    private var prevLocation = CGPointZero
     
     public static func setSceneView(_ sceneView: ARSCNView) {
         instance.setSceneView(sceneView)
@@ -34,6 +35,7 @@ class GameEngine: NSObject {
     public func setSceneView(_ sceneView: ARSCNView) {
         sceneView.delegate = self
         sceneView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(onTap(_:))))
+        sceneView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(onPan(_:))))
         self.sceneView = sceneView
     }
     
@@ -75,6 +77,23 @@ class GameEngine: NSObject {
         print(gestureRecognizer.location(in: sceneView))
         movableNode = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView))
     }
+    
+    @objc
+    private func onPan(_ gestureRecognizer: UIPanGestureRecognizer) {
+        let location = gestureRecognizer.location(in: sceneView)
+        switch gestureRecognizer.state { // add trace and camera rotation
+        case .began:
+            prevLocation = location
+        case .changed:
+            let delta = (prevLocation - location) / 200
+            movableNode?.position.x += Float(delta.x)
+            movableNode?.position.z += Float(delta.y)
+        case .ended, .cancelled, .failed:
+            print("end")
+        default:
+            return
+        }
+    }
 }
 
 extension GameEngine: GestureWatcher {
@@ -108,7 +127,7 @@ extension GameEngine: GestureWatcher {
 
 extension GameEngine: ARSCNViewDelegate {
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        guard let planeAnchor = anchor as? ARPlaneAnchor, let sceneView else { return }
+        guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
         
         let plane = Plane(anchor: planeAnchor, in: sceneView)
         
