@@ -85,15 +85,4 @@ class Plane: SCNNode {
             fatalError("Can't load wireframe shader: \(error)")
         }
     }
-    
-    private func makeTextNode(_ text: String) -> SCNNode {
-        let textGeometry = SCNText(string: text, extrusionDepth: 1)
-        textGeometry.font = UIFont(name: "Futura", size: 75)
-
-        let textNode = SCNNode(geometry: textGeometry)
-        // scale down the size of the text
-        textNode.simdScale = float3(0.0005)
-        
-        return textNode
-    }
 }
