@@ -15,10 +15,17 @@ class GameEngine: NSObject {
         }
     }
     
-    private override init() { super.init() }
+    private override init() {
+        super.init()
+        
+        GestureRecognizer.shared.watcher = self
+    }
+    
     private static let instance = GameEngine()
     
     private var sceneView: ARSCNView! // don't kill me I don't want to write guard let in every func
+    
+    private var movableNode: SCNNode?
     
     public static func setSceneView(_ sceneView: ARSCNView) {
         instance.setSceneView(sceneView)
@@ -61,7 +68,12 @@ class GameEngine: NSObject {
     
     @objc
     private func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
-        let _ = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView))
+        if let movableNode {
+            return
+        }
+        
+        print(gestureRecognizer.location(in: sceneView))
+        movableNode = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView))
     }
 }
 
@@ -71,15 +83,26 @@ extension GameEngine: GestureWatcher {
     }
     
     func startPosition(on point: CGPoint?) {
+        print(point!)
+        guard let movableNode, let point else {
+            print("no figure")
+            return
+        }
         
+        let hit = sceneView.hitTest(point, options: [SCNHitTestOption.searchMode : 1])
+        //print(hit.count)
+        if movableNode == hit.first?.node {
+            print("found")
+        }
+        // trace and try to find movable node
     }
     
     func updatePosition(on point: CGPoint?) {
-        
+        // calc delta and update position (take camera rotation into consideration)
     }
     
     func finishPosition(on point: CGPoint?) {
-        
+        // end??
     }
 }
 
