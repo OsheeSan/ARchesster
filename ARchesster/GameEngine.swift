@@ -117,25 +117,34 @@ extension GameEngine: GestureWatcher {
     }
     
     func startPosition(on point: CGPoint?) {
-        guard let movableNode, let point else {
-            print("no figure")
+        guard let point else {
+            print("no point")
             return
         }
         
-        let hit = sceneView.hitTest(point, options: [SCNHitTestOption.searchMode : 1])
+        let hit = sceneView.hitTest(point, options: nil)
         //print(hit.count)
-        if movableNode == hit.first?.node {
-            print("found")
+        if let node = hit.first?.node, let _ = node.name {
+            movableNode = node
+            prevLocation = point
         }
-        // trace and try to find movable node
     }
     
     func updatePosition(on point: CGPoint?) {
-        // calc delta and update position (take camera rotation into consideration)
+        guard let point else {
+            print("no point")
+            return
+        }
+        
+        var delta = (point - prevLocation).unit() / 100
+        delta = delta.rotate(by: (cameraRotation?.y ?? 0) * -1)
+        movableNode?.position.x += Float(delta.x)
+        movableNode?.position.z += Float(delta.y)
     }
     
     func finishPosition(on point: CGPoint?) {
-        // end??
+        movableNode = nil
+        prevLocation = CGPointZero
     }
 }
 
