@@ -135,12 +135,10 @@ class ViewController: UIViewController, ARSessionDelegate {
             
             let midX = (thumbTip.x + indexTip.x) / 2
             let midY = (thumbTip.y + indexTip.y) / 2
-            
-            let screenSize = UIScreen.main.bounds.size
-            
+            var screenSize =  sceneView.frame.size
             let screenX = midX * screenSize.width
-            let screenY = (1 - midY) * screenSize.height
-            
+            let screenY = midY * screenSize.height
+            print("x\(screenX) y\(screenY)")
             return CGPoint(x: screenX, y: screenY)
         } catch {
             print("Error pos")
