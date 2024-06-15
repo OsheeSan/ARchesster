@@ -38,7 +38,7 @@ class ViewController: UIViewController, ARSessionDelegate {
         super.viewDidAppear(animated)
         sceneView = ARSCNView(frame: view.frame)
         view.addSubview(sceneView)
-        GameEngine.Instance.setSceneView(sceneView)
+        GameEngine.setSceneView(sceneView)
         sceneView.session.delegate = self
         sceneView.showsStatistics = false
         
@@ -71,6 +71,8 @@ class ViewController: UIViewController, ARSessionDelegate {
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        GameEngine.setCameraRotation(frame.camera.eulerAngles)
+        
         guard currentBuffer == nil, case .normal = frame.camera.trackingState else {
             return
         }
