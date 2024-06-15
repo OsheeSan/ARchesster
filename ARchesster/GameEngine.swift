@@ -94,7 +94,8 @@ class GameEngine: NSObject {
         case .began:
             prevLocation = location
         case .changed:
-            let delta = (location - prevLocation).unit() / 100
+            var delta = (location - prevLocation).unit() / 100
+            delta = delta.rotate(by: (cameraRotation?.y ?? 0) * -1)
             movableNode?.position.x += Float(delta.x)
             movableNode?.position.z += Float(delta.y) // why th z is not corresponding for height
         case .ended, .cancelled, .failed:
@@ -111,7 +112,6 @@ extension GameEngine: GestureWatcher {
     }
     
     func startPosition(on point: CGPoint?) {
-        print(point!)
         guard let movableNode, let point else {
             print("no figure")
             return

@@ -24,4 +24,13 @@ extension CGPoint {
         let magnitude = sqrt(self.x * self.x + self.y * self.y)
         return CGPoint(x: self.x / magnitude, y: self.y / magnitude)
     }
+    
+    func rotate(by angle: Float) -> CGPoint {
+        let s = CGFloat(sin(angle))
+        let c = CGFloat(cos(angle))
+        
+        return CGPoint(
+            x: self.x * c - self.y * s,
+            y: self.x * s + self.y * c)
+    }
 }
