@@ -12,22 +12,10 @@ import Vision
 
 class HandNode: SCNNode {
     
-    let validKeys: [VNHumanHandPoseObservation.JointName] = [//.wrist,
-                                                             .thumbTip,  .thumbCMC,
-                                                             .indexTip,  .indexMCP,
-//                                                             .middleTip, .middleMCP,
-//                                                             .ringTip, .ringMCP,
-                                                            /* .littleTip,  .littleMCP*/]
-    
-    
-    
-//    [.wrist,
-//                                                             .thumbTip, .thumbIP, .thumbMP, .thumbCMC,
-//                                                             .indexTip, .indexDIP, .indexPIP, .indexMCP,
-//                                                             .middleTip, .middleDIP, .middlePIP, .middleMCP,
-//                                                             .ringTip, .ringDIP, .ringPIP, .ringMCP,
-//                                                             .littleTip, .littleDIP, .littlePIP, .littleMCP]
-//
+    let validKeys: [VNHumanHandPoseObservation.JointName] = [
+                                                             .thumbTip,
+                                                             .indexTip,]
+
     var keyToInd = [VNHumanHandPoseObservation.JointName : Int]()
     var collabConstraints = [String : [simd_float3]]()
     

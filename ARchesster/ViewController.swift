@@ -34,9 +34,12 @@ class ViewController: UIViewController, ARSessionDelegate {
     
     var timeoutleft = TIME_OUT
     
+    var screenSize: CGSize!
+    
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         sceneView = ARSCNView(frame: view.frame)
+        screenSize = sceneView.bounds.size
         view.addSubview(sceneView)
         GameEngine.setSceneView(sceneView)
         sceneView.session.delegate = self
@@ -137,9 +140,9 @@ class ViewController: UIViewController, ARSessionDelegate {
             
             let midX = (thumbTip.x + indexTip.x) / 2
             let midY = (thumbTip.y + indexTip.y) / 2
-            var screenSize =  sceneView.frame.size
-            let screenX = midX * screenSize.width
-            let screenY = midY * screenSize.height
+            let screenX = midY * screenSize.width
+            let screenY = midX * screenSize.height
+            print("width\(screenSize.width) height\(screenSize.height)")
             print("x\(screenX) y\(screenY)")
             return CGPoint(x: screenX, y: screenY)
         } catch {
