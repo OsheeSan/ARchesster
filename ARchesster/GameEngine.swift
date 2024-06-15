@@ -24,6 +24,7 @@ class GameEngine: NSObject {
     private static let instance = GameEngine()
     
     private var sceneView: ARSCNView! // don't kill me I don't want to write guard let in every func
+    private var cameraRotation: simd_float3?
     
     private var movableNode: SCNNode?
     private var prevLocation = CGPointZero
@@ -37,6 +38,14 @@ class GameEngine: NSObject {
         sceneView.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(onTap(_:))))
         sceneView.addGestureRecognizer(UIPanGestureRecognizer(target: self, action: #selector(onPan(_:))))
         self.sceneView = sceneView
+    }
+    
+    public static func setCameraRotation(_ rotation: simd_float3) {
+        instance.setCameraRotation(rotation)
+    }
+    
+    public func setCameraRotation(_ rotation: simd_float3) {
+        cameraRotation = rotation
     }
     
     public static func spawn(node named: String, atScreenLocation location: CGPoint) -> SCNNode? {
@@ -70,7 +79,7 @@ class GameEngine: NSObject {
     
     @objc
     private func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
-        if let movableNode {
+        if movableNode != nil {
             return
         }
         
@@ -85,9 +94,9 @@ class GameEngine: NSObject {
         case .began:
             prevLocation = location
         case .changed:
-            let delta = (prevLocation - location) / 200.0
+            let delta = (location - prevLocation).unit() / 100
             movableNode?.position.x += Float(delta.x)
-            movableNode?.position.z += Float(delta.y)
+            movableNode?.position.z += Float(delta.y) // why th z is not corresponding for height
         case .ended, .cancelled, .failed:
             print("end")
         default:
