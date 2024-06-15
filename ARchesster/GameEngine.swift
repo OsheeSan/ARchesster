@@ -29,6 +29,8 @@ class GameEngine: NSObject {
     private var movableNode: SCNNode?
     private var prevLocation = CGPointZero
     
+    private var spawnedNodes: [SCNNode] = []
+    
     public static func setSceneView(_ sceneView: ARSCNView) {
         instance.setSceneView(sceneView)
     }
@@ -74,17 +76,14 @@ class GameEngine: NSObject {
         node.position = location
         //node.setWorldTransform(SCNMatrix4(res.worldTransform)) // but why does this not work....
         instance.sceneView.scene.rootNode.addChildNode(node)
-        return node
+        return instance.sceneView.scene.rootNode.childNodes.last // like why does this not return the thing we are tracing for??
     }
     
     @objc
     private func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
-        if movableNode != nil {
-            return
+        if let node = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView)) {
+            spawnedNodes.append(node) // why is this not the ref..
         }
-        
-        print(gestureRecognizer.location(in: sceneView))
-        movableNode = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView))
     }
     
     @objc
@@ -92,14 +91,20 @@ class GameEngine: NSObject {
         let location = gestureRecognizer.location(in: sceneView)
         switch gestureRecognizer.state { // add trace and camera rotation
         case .began:
-            prevLocation = location
+            let hit = sceneView.hitTest(location, options: nil)
+            if let node = hit.first?.node, let _ = node.name {
+                print("found \(spawnedNodes.contains(node))") // idk why this is false, so I'm checking for valid name
+                movableNode = node
+                prevLocation = location
+            }
         case .changed:
             var delta = (location - prevLocation).unit() / 100
             delta = delta.rotate(by: (cameraRotation?.y ?? 0) * -1)
             movableNode?.position.x += Float(delta.x)
             movableNode?.position.z += Float(delta.y) // why th z is not corresponding for height
         case .ended, .cancelled, .failed:
-            print("end")
+            movableNode = nil
+            prevLocation = CGPointZero
         default:
             return
         }
