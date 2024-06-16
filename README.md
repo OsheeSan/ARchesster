@@ -25,7 +25,6 @@ ARChesster allows you to experience the timeless game of chess in a whole new di
 - @oshee_san
 
 ## Demo Info*
-The main idea of the project is to be able to interact with chess pieces with different ways.\n In this demo you can place chess pieces onto the planes and move them two different ways: Dragging across the device screen and Using hand gesture drag & drop
-The first method let's you drag the figure, like using a virtual joystick. If you start your drag from the figure it will move considering camera rotation, so no matter from which side you look, moving finger from bottom to top will move the figure directly further and other ways around.
-The drag & drop gesture will track your finger position in front of the camera. If you make a gesture with your thumb and point finger touching, like picking up something, the figure will attach to your fingers, tracing their position from screen space to 3d scene space. Releasing fingers will stop moving figure across the plane
+The main idea of the project is to be able to interact with chess pieces with different ways.  In this demo you can place chess pieces onto the planes and move them two different ways: Dragging across the device screen and Using hand gesture drag & drop
+The first method let's you drag the figure, like using a virtual joystick. If you start your drag from the figure it will move considering camera rotation, so no matter from which side you look, moving finger from bottom to top will move the figure directly further and other ways around.  The drag & drop gesture will track your finger position in front of the camera. If you make a gesture with your thumb and point finger touching, like picking up something, the figure will attach to your fingers, tracing their position from screen space to 3d scene space. Releasing fingers will stop moving figure across the plane
 
