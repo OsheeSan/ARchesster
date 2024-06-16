@@ -10,6 +10,7 @@ import SceneKit
 import ARKit
 import Vision
 
+///Class to draw gesture hand points
 class HandNode: SCNNode {
     
     let validKeys: [VNHumanHandPoseObservation.JointName] = [

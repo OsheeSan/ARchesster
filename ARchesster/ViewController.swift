@@ -11,7 +11,6 @@ import ARKit
 import Vision
 import AVFoundation
 
-let USE_DEPTH = false
 let TIME_OUT = 100
 
 class ViewController: UIViewController, ARSessionDelegate {
@@ -52,12 +51,6 @@ class ViewController: UIViewController, ARSessionDelegate {
         configuration = ARWorldTrackingConfiguration()
         
         configuration!.planeDetection = .horizontal
-        
-        if USE_DEPTH && ARWorldTrackingConfiguration.supportsFrameSemantics(.personSegmentationWithDepth) {
-            configuration?.frameSemantics.insert(.personSegmentationWithDepth)
-        } else {
-            print("No people occlusion supported.")
-        }
         
         configuration?.isCollaborationEnabled = true
         
@@ -217,16 +210,6 @@ class ViewController: UIViewController, ARSessionDelegate {
     func resetTracking() {
         guard let configuration = sceneView.session.configuration else { print("A configuration is required"); return }
         sceneView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-    }
-    
-    private func removeAllAnchorsOriginatingFromARSessionWithID(_ identifier: String) {
-        guard let frame = sceneView.session.currentFrame else { return }
-        for anchor in frame.anchors {
-            guard let anchorSessionID = anchor.sessionIdentifier else { continue }
-            if anchorSessionID.uuidString == identifier {
-                sceneView.session.remove(anchor: anchor)
-            }
-        }
     }
 }
 
