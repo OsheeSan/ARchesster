@@ -74,6 +74,7 @@ class GameEngine: NSObject {
         }
         
         node.position = location
+        print("Spawn at \(location)")
         //node.setWorldTransform(SCNMatrix4(res.worldTransform)) // but why does this not work....
         instance.sceneView.scene.rootNode.addChildNode(node)
         return instance.sceneView.scene.rootNode.childNodes.last // like why does this not return the thing we are tracing for??
@@ -124,9 +125,11 @@ extension GameEngine: GestureWatcher {
         
         let hit = sceneView.hitTest(point, options: nil)
         //print(hit.count)
-        if let node = hit.first?.node, let _ = node.name {
-            movableNode = node
-            prevLocation = point
+        if let res = hit.first, let _ = res.node.name {
+            movableNode = res.node
+            let nodePos = CGPoint(x: CGFloat(res.node.position.x), y: CGFloat(res.node.position.z))
+            let worldPos = CGPoint(x: CGFloat(res.worldCoordinates.x), y: CGFloat(res.worldCoordinates.z))
+            prevLocation = nodePos - worldPos
         }
     }
     
@@ -136,10 +139,13 @@ extension GameEngine: GestureWatcher {
             return
         }
         
-        var delta = (point - prevLocation).unit() / 100
-        delta = delta.rotate(by: (cameraRotation?.y ?? 0) * -1)
-        movableNode?.position.x += Float(delta.x)
-        movableNode?.position.z += Float(delta.y)
+        guard let res = sceneView.hitTest(point, types: .existingPlaneUsingExtent).first else {
+            print("no res trace")
+            return
+        }
+        
+        movableNode?.position.x = res.worldTransform.columns.3[0] + Float(prevLocation.x)
+        movableNode?.position.z = res.worldTransform.columns.3[2] + Float(prevLocation.y)
     }
     
     func finishPosition(on point: CGPoint?) {
