@@ -31,7 +31,7 @@ class GameEngine: NSObject {
     private var movableNode: SCNNode?
     private var prevLocation = CGPointZero
     
-    private var spawnedNodes: [SCNNode] = []
+    private var spawnedAnchors: [ARAnchor] = []
     
     private var multipeerSession: MultipeerSession!
     
@@ -54,36 +54,31 @@ class GameEngine: NSObject {
         cameraRotation = rotation
     }
     
-    public static func spawn(node named: String, atScreenLocation location: CGPoint) -> SCNNode? {
+    public static func spawn(node named: String, atScreenLocation location: CGPoint) -> ARAnchor? {
         guard let res = instance.sceneView.hitTest(location, types: .existingPlaneUsingExtent).first else {
             return nil
         }
         
-        return spawn(node: named, atWorldTransform: res.worldTransform)
-    }
-    
-    public static func spawn(node named: String, atWorldTransform transform: simd_float4x4) -> SCNNode? {
-        let vec = SCNVector3(transform.columns.3[0], transform.columns.3[1], transform.columns.3[2])
+        let anchor = ARAnchor(name: "rook-dark", transform: res.worldTransform)
+        instance.sceneView.session.add(anchor: anchor)
         
-        return spawn(node: named, atLocation: vec)
+        return anchor
     }
     
-    public static func spawn(node named: String, atLocation location: SCNVector3) -> SCNNode? {
+    public static func loadNodeModel(node named: String) -> SCNReferenceNode {
         let sceneURL = Bundle.main.url(forResource: named, withExtension: "scn", subdirectory: "Assets.scnassets")!
         let referenceNode = SCNReferenceNode(url: sceneURL)!
         referenceNode.load()
-        referenceNode.position = location
-        instance.sceneView.scene.rootNode.addChildNode(referenceNode)
         
-        print("Spawn at \(location)")
         return referenceNode
     }
     
     @objc
     private func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
-        if let node = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView)) {
-            spawnedNodes.append(node) // why is this not the ref..
-            multipeerSession.sendToAllPeers(node, with: .reliable)
+        if let anchor = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView)) {
+            spawnedAnchors.append(anchor)
+            sceneView.session.add(anchor: anchor)
+            multipeerSession.sendToAllPeers(anchor, with: .reliable)
         }
     }
     
@@ -93,16 +88,21 @@ class GameEngine: NSObject {
         switch gestureRecognizer.state { // add trace and camera rotation
         case .began:
             let hit = sceneView.hitTest(location, options: nil)
-            if let node = hit.first?.node, let _ = node.name {
-                print("found \(spawnedNodes.contains(node))") // idk why this is false, so I'm checking for valid name
+            if let node = hit.first?.node,
+                let anchor = sceneView.anchor(for: node),
+                spawnedAnchors.contains(anchor) {
                 movableNode = node
                 prevLocation = location
             }
         case .changed:
+            guard let movableNode else {
+                return
+            }
+            
             var delta = (location - prevLocation).unit() / 100
             delta = delta.rotate(by: (cameraRotation?.y ?? 0) * -1)
-            movableNode?.position.x += Float(delta.x)
-            movableNode?.position.z += Float(delta.y) // why th z is not corresponding for height
+            movableNode.position.x += Float(delta.x)
+            movableNode.position.z += Float(delta.y) // why th z is not corresponding for height
         case .ended, .cancelled, .failed:
             movableNode = nil
             prevLocation = CGPointZero
@@ -155,11 +155,16 @@ extension GameEngine: GestureWatcher {
 
 extension GameEngine: ARSCNViewDelegate {
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        guard let planeAnchor = anchor as? ARPlaneAnchor else { return }
+        if let planeAnchor = anchor as? ARPlaneAnchor {
+            let plane = Plane(anchor: planeAnchor, in: sceneView)
+            node.addChildNode(plane)
+            return
+        }
         
-        let plane = Plane(anchor: planeAnchor, in: sceneView)
-        
-        node.addChildNode(plane)
+        if let name = anchor.name {
+            let spawnedRef = GameEngine.loadNodeModel(node: name)
+            node.addChildNode(spawnedRef)
+        }
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
@@ -184,12 +189,12 @@ extension GameEngine: ARSCNViewDelegate {
 
 extension GameEngine: MultipeerSessionDelegate {
     func receivedData(_ data: Data, from peer: MCPeerID) {
-        if let decoded = try? NSKeyedUnarchiver.unarchivedObject(ofClass: SCNNode.self, from: data) {
-            nodeReceived(decoded)
+        if let decoded = try? NSKeyedUnarchiver.unarchivedObject(ofClass: ARAnchor.self, from: data) {
+            anchorReceived(decoded)
         }
     }
     
-    func nodeReceived(_ node: SCNNode) {
-        sceneView.scene.rootNode.addChildNode(node)
+    func anchorReceived(_ anchor: ARAnchor) {
+        sceneView.session.add(anchor: anchor)
     }
 }
