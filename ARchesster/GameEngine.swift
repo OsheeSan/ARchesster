@@ -56,7 +56,6 @@ class GameEngine: NSObject {
     
     public static func spawn(node named: String, atScreenLocation location: CGPoint) -> SCNNode? {
         guard let res = instance.sceneView.hitTest(location, types: .existingPlaneUsingExtent).first else {
-            print("no res trace")
             return nil
         }
         
@@ -141,7 +140,6 @@ extension GameEngine: GestureWatcher {
         }
         
         guard let res = sceneView.hitTest(point, types: .existingPlaneUsingExtent).first else {
-            print("no res trace")
             return
         }
         

@@ -341,6 +341,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ARchesster/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Allow to use ARScene";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Allow to use Multipeer";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
@@ -374,6 +375,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ARchesster/Info.plist;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Allow to use ARScene";
+				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Allow to use Multipeer";
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
