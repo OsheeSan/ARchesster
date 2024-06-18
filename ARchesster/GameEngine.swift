@@ -7,6 +7,7 @@
 
 import Foundation
 import ARKit
+import MultipeerConnectivity
 
 class GameEngine: NSObject {
     public static var Instance: GameEngine {
@@ -19,6 +20,7 @@ class GameEngine: NSObject {
         super.init()
         
         GestureRecognizer.shared.watcher = self
+        multipeerSession = MultipeerSession(delegate: self)
     }
     
     private static let instance = GameEngine()
@@ -30,6 +32,8 @@ class GameEngine: NSObject {
     private var prevLocation = CGPointZero
     
     private var spawnedNodes: [SCNNode] = []
+    
+    private var multipeerSession: MultipeerSession!
     
     public static func setSceneView(_ sceneView: ARSCNView) {
         instance.setSceneView(sceneView)
@@ -66,24 +70,21 @@ class GameEngine: NSObject {
     }
     
     public static func spawn(node named: String, atLocation location: SCNVector3) -> SCNNode? {
-        let scene = SCNScene(named: "Assets.scnassets/\(named).scn")
+        let sceneURL = Bundle.main.url(forResource: named, withExtension: "scn", subdirectory: "Assets.scnassets")!
+        let referenceNode = SCNReferenceNode(url: sceneURL)!
+        referenceNode.load()
+        referenceNode.position = location
+        instance.sceneView.scene.rootNode.addChildNode(referenceNode)
         
-        guard let node = scene?.rootNode.childNodes.first else {
-            print("can't extract node")
-            return nil
-        }
-        
-        node.position = location
         print("Spawn at \(location)")
-        //node.setWorldTransform(SCNMatrix4(res.worldTransform)) // but why does this not work....
-        instance.sceneView.scene.rootNode.addChildNode(node)
-        return instance.sceneView.scene.rootNode.childNodes.last // like why does this not return the thing we are tracing for??
+        return referenceNode
     }
     
     @objc
     private func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
         if let node = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView)) {
             spawnedNodes.append(node) // why is this not the ref..
+            multipeerSession.sendToAllPeers(node, with: .reliable)
         }
     }
     
@@ -180,5 +181,17 @@ extension GameEngine: ARSCNViewDelegate {
             extentGeometry.height = CGFloat(planeAnchor.extent.z)
             plane.extentNode.simdPosition = planeAnchor.center
         }
+    }
+}
+
+extension GameEngine: MultipeerSessionDelegate {
+    func receivedData(_ data: Data, from peer: MCPeerID) {
+        if let decoded = try? NSKeyedUnarchiver.unarchivedObject(ofClass: SCNNode.self, from: data) {
+            nodeReceived(decoded)
+        }
+    }
+    
+    func nodeReceived(_ node: SCNNode) {
+        sceneView.scene.rootNode.addChildNode(node)
     }
 }
