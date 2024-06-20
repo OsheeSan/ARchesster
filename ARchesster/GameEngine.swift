@@ -95,7 +95,9 @@ class GameEngine: NSObject {
                 prevLocation = location
             }
         case .changed:
-            guard let movableNode else {
+            guard let movableNode,
+                  let anchor = sceneView.anchor(for: movableNode)
+            else {
                 return
             }
             
@@ -103,8 +105,16 @@ class GameEngine: NSObject {
             delta = delta.rotate(by: (cameraRotation?.y ?? 0) * -1)
             movableNode.position.x += Float(delta.x)
             movableNode.position.z += Float(delta.y) // why th z is not corresponding for height
+            multipeerSession.sendToAllPeers(PositionUpdate(anchor: anchor, position: movableNode.position), with: .unreliable)
         case .ended, .cancelled, .failed:
-            movableNode = nil
+            guard let movableNode,
+                  let anchor = sceneView.anchor(for: movableNode)
+            else {
+                return
+            }
+            
+            multipeerSession.sendToAllPeers(PositionUpdate(anchor: anchor, position: movableNode.position), with: .reliable)
+            self.movableNode = nil
             prevLocation = CGPointZero
         default:
             return
@@ -139,16 +149,30 @@ extension GameEngine: GestureWatcher {
             return
         }
         
+        guard let movableNode,
+              let anchor = sceneView.anchor(for: movableNode)
+        else {
+            return
+        }
+        
         guard let res = sceneView.hitTest(point, types: .existingPlaneUsingExtent).first else {
             return
         }
         
-        movableNode?.position.x = res.worldTransform.columns.3[0] + Float(prevLocation.x)
-        movableNode?.position.z = res.worldTransform.columns.3[2] + Float(prevLocation.y)
+        movableNode.position.x = res.worldTransform.columns.3[0] + Float(prevLocation.x)
+        movableNode.position.z = res.worldTransform.columns.3[2] + Float(prevLocation.y)
+        multipeerSession.sendToAllPeers(PositionUpdate(anchor: anchor, position: movableNode.position), with: .unreliable)
     }
     
     func finishPosition(on point: CGPoint?) {
-        movableNode = nil
+        guard let movableNode,
+              let anchor = sceneView.anchor(for: movableNode)
+        else {
+            return
+        }
+        
+        multipeerSession.sendToAllPeers(PositionUpdate(anchor: anchor, position: movableNode.position), with: .reliable)
+        self.movableNode = nil
         prevLocation = CGPointZero
     }
 }
@@ -191,10 +215,21 @@ extension GameEngine: MultipeerSessionDelegate {
     func receivedData(_ data: Data, from peer: MCPeerID) {
         if let decoded = try? NSKeyedUnarchiver.unarchivedObject(ofClass: ARAnchor.self, from: data) {
             anchorReceived(decoded)
+            return
+        }
+        if let decoded = try? NSKeyedUnarchiver.unarchivedObject(ofClass: PositionUpdate.self, from: data) {
+            positionUpdateReceived(decoded)
+            return
         }
     }
     
     func anchorReceived(_ anchor: ARAnchor) {
         sceneView.session.add(anchor: anchor)
+    }
+    
+    func positionUpdateReceived(_ positionUpdate: PositionUpdate) {
+        if let node = sceneView.node(for: positionUpdate.anchor)?.childNodes.first {
+            node.position = positionUpdate.position
+        }
     }
 }
