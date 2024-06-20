@@ -12,7 +12,10 @@ class PositionUpdate: NSObject, NSSecureCoding {
     static var supportsSecureCoding: Bool { return true }
     
     func encode(with coder: NSCoder) {
-        let encodedAnchor = try! NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true)
+        guard let encodedAnchor = try? NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true) else {
+            return
+        }
+        
         coder.encode(encodedAnchor, forKey: "anchor")
         coder.encode(position.x, forKey: "x")
         coder.encode(position.y, forKey: "y")
