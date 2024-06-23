@@ -68,6 +68,18 @@ class GameEngine: NSObject {
         return anchor
     }
     
+    public static func loadChessBoard() -> SCNNode {
+        let box = SCNBox(width: 1, height: 0.1, length: 1, chamferRadius: 0)
+        
+        let material = SCNMaterial()
+        material.diffuse.contents = UIImage(named: "chessboard")
+        
+        let node = SCNNode()
+        node.geometry = box
+        node.geometry?.materials = [material]
+        return node
+    }
+    
     public static func loadNodeModel(node named: String) -> SCNReferenceNode {
         let sceneURL = Bundle.main.url(forResource: named, withExtension: "scn", subdirectory: "Assets.scnassets")!
         let referenceNode = SCNReferenceNode(url: sceneURL)!
