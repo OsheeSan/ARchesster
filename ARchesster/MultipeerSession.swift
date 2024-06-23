@@ -38,6 +38,7 @@ class MultipeerSession: NSObject {
     }
     
     func sendToAllPeers(_ data: Any, with reliability: MCSessionSendDataMode) {
+        guard !session.connectedPeers.isEmpty else { return }
         do {
             let coded = try NSKeyedArchiver.archivedData(withRootObject: data, requiringSecureCoding: true)
             try session.send(coded, toPeers: session.connectedPeers, with: reliability)

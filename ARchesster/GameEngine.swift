@@ -134,8 +134,9 @@ extension GameEngine: GestureWatcher {
         }
         
         let hit = sceneView.hitTest(point, options: nil)
-        //print(hit.count)
-        if let res = hit.first, let _ = res.node.name {
+        if let res = hit.first,
+           let anchor = sceneView.anchor(for: res.node),
+           spawnedAnchors.contains(anchor) {
             movableNode = res.node
             let nodePos = CGPoint(x: CGFloat(res.node.position.x), y: CGFloat(res.node.position.z))
             let worldPos = CGPoint(x: CGFloat(res.worldCoordinates.x), y: CGFloat(res.worldCoordinates.z))
