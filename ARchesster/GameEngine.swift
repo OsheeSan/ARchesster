@@ -25,6 +25,8 @@ class GameEngine: NSObject {
     
     private static let instance = GameEngine()
     
+    private static let chessboardBox = SCNBox(width: 1, height: 0.1, length: 1, chamferRadius: 0)
+    
     private var sceneView: ARSCNView! // don't kill me I don't want to write guard let in every func
     private var cameraRotation: simd_float3?
     
@@ -37,6 +39,10 @@ class GameEngine: NSObject {
     private var spawnedAnchors: [ARAnchor] = []
     
     private var multipeerSession: MultipeerSession!
+    
+    private var gameStarted = false
+    
+    private var chessboard: ARAnchor?
     
     public static func setSceneView(_ sceneView: ARSCNView) {
         instance.setSceneView(sceneView)
@@ -62,20 +68,28 @@ class GameEngine: NSObject {
             return nil
         }
         
-        let anchor = ARAnchor(name: named, transform: res.worldTransform)
+        return spawn(node: named, atWorldTransform: res.worldTransform)
+    }
+    
+    public static func spawn(node named: String, atWorldTransform transform: simd_float4x4) -> ARAnchor {
+        let anchor = ARAnchor(name: named, transform: transform)
         instance.sceneView.session.add(anchor: anchor)
+        
+        if instance.gameStarted {
+            instance.spawnedAnchors.append(anchor)
+        }
+        
+        instance.multipeerSession.sendToAllPeers(anchor, with: .reliable)
         
         return anchor
     }
     
     public static func loadChessBoard() -> SCNNode {
-        let box = SCNBox(width: 1, height: 0.1, length: 1, chamferRadius: 0)
-        
         let material = SCNMaterial()
         material.diffuse.contents = UIImage(named: "chessboard")
         
         let node = SCNNode()
-        node.geometry = box
+        node.geometry = chessboardBox
         node.geometry?.materials = [material]
         return node
     }
@@ -88,19 +102,74 @@ class GameEngine: NSObject {
         return referenceNode
     }
     
+    private func placeFigures(isBlack: Bool) {
+        let color = isBlack ? "dark" : "light"
+        let pawnRow = isBlack ? 1 : 6
+        for i in 0..<8 {
+            let _ = GameEngine.spawn(node: "pawn-\(color)", 
+                                     atWorldTransform: boardToWorld(coords: CGPoint(x: i, y: pawnRow)))
+        }
+        let row = isBlack ? 0 : 7
+        let _ = GameEngine.spawn(node: "rook-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 0, y: row)))
+        let _ = GameEngine.spawn(node: "rook-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 7, y: row)))
+        let _ = GameEngine.spawn(node: "knight-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 1, y: row)))
+        let _ = GameEngine.spawn(node: "knight-\(color)", 
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 6, y: row)))
+        let _ = GameEngine.spawn(node: "bishop-\(color)", 
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 2, y: row)))
+        let _ = GameEngine.spawn(node: "bishop-\(color)", 
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 5, y: row)))
+        let _ = GameEngine.spawn(node: "king-\(color)", 
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 3, y: row)))
+        let _ = GameEngine.spawn(node: "queen-\(color)", 
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 4, y: row)))
+    }
+    
+    private func boardToWorld(coords: CGPoint) -> simd_float4x4 {
+        guard let chessboard else {
+            return simd_float4x4()
+        }
+        
+        let cellSize = GameEngine.chessboardBox.width / 8
+        var boardZero = CGPoint(x: CGFloat(chessboard.transform.columns.3.x),
+                                y: CGFloat(chessboard.transform.columns.3.z))
+        
+        var boardZeroRot = CGPoint(x: cellSize * 4 - cellSize / 2, y: cellSize * 4 - cellSize / 2)
+        boardZeroRot = boardZeroRot.rotate(by: chessboard.rotationAngle)
+        
+        boardZero = boardZero - boardZeroRot
+        
+        var boardAddRot = CGPoint(x: coords.x * cellSize, y: coords.y * cellSize)
+        boardAddRot = boardAddRot.rotate(by: chessboard.rotationAngle)
+        
+        var res = chessboard.transform
+        res.columns.3.x = Float(boardZero.x)
+        res.columns.3.z = Float(boardZero.y)
+        res.columns.3.x += Float(boardAddRot.x)
+        res.columns.3.y += Float(GameEngine.chessboardBox.height)
+        res.columns.3.z += Float(boardAddRot.y)
+        
+        return res
+    }
+    
     @objc
     private func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
-        if let anchor = GameEngine.spawn(node: "rook-dark", atScreenLocation: gestureRecognizer.location(in: sceneView)) {
-            spawnedAnchors.append(anchor)
-            sceneView.session.add(anchor: anchor)
-            multipeerSession.sendToAllPeers(anchor, with: .reliable)
+        guard !gameStarted else { return }
+        
+        if let anchor = GameEngine.spawn(node: "chessboard", atScreenLocation: gestureRecognizer.location(in: sceneView)) {
+            chessboard = anchor
+            gameStarted = true
+            placeFigures(isBlack: true)
         }
     }
     
     @objc
     private func onPan(_ gestureRecognizer: UIPanGestureRecognizer) {
         let location = gestureRecognizer.location(in: sceneView)
-        switch gestureRecognizer.state { // add trace and camera rotation
+        switch gestureRecognizer.state {
         case .began:
             let hit = sceneView.hitTest(location, options: nil)
             if let node = hit.first?.node,
@@ -178,7 +247,7 @@ extension GameEngine: GestureWatcher {
         
         var newLocation = CGPoint(x: CGFloat(res.worldTransform.columns.3[0] + Float(gestureOffset.x)),
                                   y: CGFloat(res.worldTransform.columns.3[2] + Float(gestureOffset.y)))
-        newLocation = newLocation.rotate(by: -anchor.rotationAngle)
+        newLocation = newLocation.rotate(by: -anchor.rotationAngle) // at this point I honestly don't know how the coords work here, but without this literally tracing every frame is moving with offset. I'm so confused
         gestureMovableNode.position.x = Float(newLocation.x)
         gestureMovableNode.position.z = Float(newLocation.y)
         multipeerSession.sendToAllPeers(PositionUpdate(anchor: anchor, position: gestureMovableNode.position), with: .unreliable)
@@ -206,8 +275,18 @@ extension GameEngine: ARSCNViewDelegate {
         }
         
         if let name = anchor.name {
-            let spawnedRef = GameEngine.loadNodeModel(node: name)
-            node.addChildNode(spawnedRef)
+            if name == "chessboard" {
+                let addNode = GameEngine.loadChessBoard()
+                sceneView.prepare([addNode]) { (success) in
+                    node.addChildNode(addNode)
+                }
+                return
+            }
+            
+            let addNode = GameEngine.loadNodeModel(node: name)
+            sceneView.prepare([addNode]) { (success) in
+                node.addChildNode(addNode)
+            }
         }
     }
     
