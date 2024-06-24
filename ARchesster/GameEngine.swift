@@ -103,7 +103,6 @@ class GameEngine: NSObject {
     }
     
     private func placeFigures(isBlack: Bool) {
-        print(chessboard!.transform.columns.3)
         let color = isBlack ? "dark" : "light"
         let pawnRow = isBlack ? 1 : 6
         for i in 0..<8 {
@@ -111,12 +110,11 @@ class GameEngine: NSObject {
                                      atWorldTransform: boardToWorld(coords: CGPoint(x: i, y: pawnRow)))
         }
         let row = isBlack ? 0 : 7
-        let rook = GameEngine.spawn(node: "rook-\(color)",
+        let _ = GameEngine.spawn(node: "rook-\(color)",
                                  atWorldTransform: boardToWorld(coords: CGPoint(x: 0, y: row)))
-        print(rook.transform.columns.3)
         let _ = GameEngine.spawn(node: "rook-\(color)",
                                  atWorldTransform: boardToWorld(coords: CGPoint(x: 7, y: row)))
-        let _ = GameEngine.spawn(node: "knight-\(color)", 
+        let _ = GameEngine.spawn(node: "knight-\(color)",
                                  atWorldTransform: boardToWorld(coords: CGPoint(x: 1, y: row)))
         let _ = GameEngine.spawn(node: "knight-\(color)", 
                                  atWorldTransform: boardToWorld(coords: CGPoint(x: 6, y: row)))
@@ -136,15 +134,23 @@ class GameEngine: NSObject {
         }
         
         let cellSize = GameEngine.chessboardBox.width / 8
-        var boardZero = chessboard.transform.columns.3
-        boardZero.x -= Float(cellSize) * 4 - Float(cellSize) / 2
-        boardZero.z -= Float(cellSize) * 4 - Float(cellSize) / 2
+        var boardZero = CGPoint(x: CGFloat(chessboard.transform.columns.3.x),
+                                y: CGFloat(chessboard.transform.columns.3.z))
+        
+        var boardZeroRot = CGPoint(x: cellSize * 4 - cellSize / 2, y: cellSize * 4 - cellSize / 2)
+        boardZeroRot = boardZeroRot.rotate(by: chessboard.rotationAngle)
+        
+        boardZero = boardZero - boardZeroRot
+        
+        var boardAddRot = CGPoint(x: coords.x * cellSize, y: coords.y * cellSize)
+        boardAddRot = boardAddRot.rotate(by: chessboard.rotationAngle)
         
         var res = chessboard.transform
-        res.columns.3 = boardZero
-        res.columns.3.x += Float(coords.x * cellSize)
+        res.columns.3.x = Float(boardZero.x)
+        res.columns.3.z = Float(boardZero.y)
+        res.columns.3.x += Float(boardAddRot.x)
         res.columns.3.y += Float(GameEngine.chessboardBox.height)
-        res.columns.3.z += Float(coords.y * cellSize)
+        res.columns.3.z += Float(boardAddRot.y)
         
         return res
     }
