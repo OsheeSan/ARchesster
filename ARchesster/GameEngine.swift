@@ -41,8 +41,19 @@ class GameEngine: NSObject {
     private var multipeerSession: MultipeerSession!
     
     private var gameStarted = false
+    private var isBlack: Bool {
+        multipeerSession.getIsHost()
+    }
     
     private var chessboard: ARAnchor?
+    
+    public static func setIsHost(isHost: Bool) {
+        instance.setIsHost(isHost: isHost)
+    }
+    
+    public func setIsHost(isHost: Bool) {
+        multipeerSession.setIsHost(isHost: isHost)
+    }
     
     public static func setSceneView(_ sceneView: ARSCNView) {
         instance.setSceneView(sceneView)
@@ -102,33 +113,33 @@ class GameEngine: NSObject {
         return referenceNode
     }
     
-    private func placeFigures(isBlack: Bool) {
+    private func placeFigures() {
         let color = isBlack ? "dark" : "light"
         let pawnRow = isBlack ? 1 : 6
         for i in 0..<8 {
             let _ = GameEngine.spawn(node: "pawn-\(color)", 
-                                     atWorldTransform: boardToWorld(coords: CGPoint(x: i, y: pawnRow)))
+                                     atWorldTransform: boardToWorld(coords: CGPoint(x: i, y: pawnRow), isBlack: isBlack))
         }
         let row = isBlack ? 0 : 7
         let _ = GameEngine.spawn(node: "rook-\(color)",
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 0, y: row)))
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 0, y: row), isBlack: isBlack))
         let _ = GameEngine.spawn(node: "rook-\(color)",
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 7, y: row)))
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 7, y: row), isBlack: isBlack))
         let _ = GameEngine.spawn(node: "knight-\(color)",
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 1, y: row)))
-        let _ = GameEngine.spawn(node: "knight-\(color)", 
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 6, y: row)))
-        let _ = GameEngine.spawn(node: "bishop-\(color)", 
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 2, y: row)))
-        let _ = GameEngine.spawn(node: "bishop-\(color)", 
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 5, y: row)))
-        let _ = GameEngine.spawn(node: "king-\(color)", 
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 3, y: row)))
-        let _ = GameEngine.spawn(node: "queen-\(color)", 
-                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 4, y: row)))
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 1, y: row), isBlack: isBlack))
+        let _ = GameEngine.spawn(node: "knight-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 6, y: row), isBlack: isBlack))
+        let _ = GameEngine.spawn(node: "bishop-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 2, y: row), isBlack: isBlack))
+        let _ = GameEngine.spawn(node: "bishop-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 5, y: row), isBlack: isBlack))
+        let _ = GameEngine.spawn(node: "king-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 3, y: row), isBlack: isBlack))
+        let _ = GameEngine.spawn(node: "queen-\(color)",
+                                 atWorldTransform: boardToWorld(coords: CGPoint(x: 4, y: row), isBlack: isBlack))
     }
     
-    private func boardToWorld(coords: CGPoint) -> simd_float4x4 {
+    private func boardToWorld(coords: CGPoint, isBlack: Bool) -> simd_float4x4 {
         guard let chessboard else {
             return simd_float4x4()
         }
@@ -143,26 +154,31 @@ class GameEngine: NSObject {
         boardZero = boardZero - boardZeroRot
         
         var boardAddRot = CGPoint(x: coords.x * cellSize, y: coords.y * cellSize)
-        boardAddRot = boardAddRot.rotate(by: chessboard.rotationAngle)
+        boardAddRot = boardAddRot.rotate(by: chessboard.rotationAngle) // even with those rotations the bugs can still ocur, I'm so done
         
         var res = chessboard.transform
         res.columns.3.x = Float(boardZero.x)
         res.columns.3.z = Float(boardZero.y)
         res.columns.3.x += Float(boardAddRot.x)
-        res.columns.3.y += Float(GameEngine.chessboardBox.height)
+        res.columns.3.y += Float(GameEngine.chessboardBox.height / 2)
         res.columns.3.z += Float(boardAddRot.y)
+        
+        if !isBlack {
+            let rotationMatrix = simd_float4x4(simd_quatf(angle: .pi, axis: simd_float3(0, 1, 0)))
+            res *= rotationMatrix
+        }
         
         return res
     }
     
     @objc
     private func onTap(_ gestureRecognizer: UITapGestureRecognizer) {
-        guard !gameStarted else { return }
+        guard multipeerSession.connectionEstablished && !gameStarted else { return }
         
         if let anchor = GameEngine.spawn(node: "chessboard", atScreenLocation: gestureRecognizer.location(in: sceneView)) {
             chessboard = anchor
             gameStarted = true
-            placeFigures(isBlack: true)
+            placeFigures()
         }
     }
     
@@ -324,6 +340,12 @@ extension GameEngine: MultipeerSessionDelegate {
     
     func anchorReceived(_ anchor: ARAnchor) {
         sceneView.session.add(anchor: anchor)
+        if let name = anchor.name,
+           name == "chessboard" {
+            chessboard = anchor
+            gameStarted = true
+            placeFigures()
+        }
     }
     
     func positionUpdateReceived(_ positionUpdate: PositionUpdate) {

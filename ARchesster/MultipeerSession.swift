@@ -20,6 +20,12 @@ class MultipeerSession: NSObject {
     
     private var delegate: MultipeerSessionDelegate?
     
+    private var isHost = true
+    
+    public var connectionEstablished: Bool {
+        !session.connectedPeers.isEmpty
+    }
+    
     init(delegate: MultipeerSessionDelegate? = nil) {
         super.init()
         
@@ -35,6 +41,12 @@ class MultipeerSession: NSObject {
         serviceBrowser = MCNearbyServiceBrowser(peer: myPeerID, serviceType: MultipeerSession.serviceType)
         serviceBrowser.delegate = self
         serviceBrowser.startBrowsingForPeers()
+    }
+    
+    public func getIsHost() -> Bool { isHost }
+    
+    public func setIsHost(isHost: Bool) {
+        self.isHost = isHost
     }
     
     func sendToAllPeers(_ data: Any, with reliability: MCSessionSendDataMode) {
@@ -55,7 +67,7 @@ class MultipeerSession: NSObject {
 extension MultipeerSession: MCSessionDelegate {
     
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        // not used
+        print("Change \(state) \(isHost)")
     }
     
     func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
@@ -78,6 +90,8 @@ extension MultipeerSession: MCSessionDelegate {
 extension MultipeerSession: MCNearbyServiceBrowserDelegate {
     
     public func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String: String]?) {
+        guard isHost else { return }
+        print("Adv \(isHost)")
         browser.invitePeer(peerID, to: session, withContext: nil, timeout: 10)
     }
 
@@ -90,6 +104,8 @@ extension MultipeerSession: MCNearbyServiceBrowserDelegate {
 extension MultipeerSession: MCNearbyServiceAdvertiserDelegate {
     
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
+        guard !isHost else { return }
+        print("Inv \(isHost)")
         invitationHandler(true, self.session)
     }
     

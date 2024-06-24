@@ -98,7 +98,7 @@ class HostJoinViewController: UIViewController {
         //MARK: - host
         hostButton.addAction(UIAction() {
             _ in
-            //Action for host
+            GameEngine.setIsHost(isHost: true)
             
             let vc = ViewController()
             vc.modalTransitionStyle = .crossDissolve
@@ -109,7 +109,7 @@ class HostJoinViewController: UIViewController {
         //MARK: - join
         joinButton.addAction(UIAction() {
             _ in
-            //Action for join
+            GameEngine.setIsHost(isHost: false)
             
             let vc = ViewController()
             vc.modalTransitionStyle = .crossDissolve
