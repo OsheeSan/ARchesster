@@ -70,7 +70,7 @@ class MainMenuViewController: UIViewController {
         
         playButton.addAction(UIAction() {
             _ in
-            let vc = ColorViewController()
+            let vc = HostJoinViewController()
             vc.modalTransitionStyle = .crossDissolve
             vc.modalPresentationStyle = .fullScreen
             self.present(vc, animated: true)
